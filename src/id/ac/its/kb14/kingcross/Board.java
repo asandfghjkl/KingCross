@@ -4,6 +4,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
+import main.game.BoardState;
+import main.game.Player;
+import main.game.Settings;
+
 public class Board {
     public static final int SIDE_LENGTH = 8;
     public static final int NO_SQUARES = SIDE_LENGTH*SIDE_LENGTH; 
@@ -50,14 +54,64 @@ public class Board {
         System.arraycopy(this.state, 0, bs.state, 0, bs.state.length);
         return bs;
     }
-    
-    public ArrayList<Board> getSuccessors(){
-        ArrayList<Board> successors = getSuccessors(true);
-        if (successors.size() > 0){
-            return  successors;
+    public int computeHeuristic(Player player){
+        switch (Settings.HEURISTIC){
+            case 1:
+                return heuristic1(player);
+            case 2:
+                return heuristic2(player);
+        }
+        throw new RuntimeException("Invalid heuristic");
+    }
+
+    private int heuristic1(Player player){
+        // 'infinite' value for winning
+        if (this.pieceCount.get(player.getOpposite()) == 0){
+            return Integer.MAX_VALUE;
+        }
+        // 'negative infinite' for losing
+        if (this.pieceCount.get(player) == 0){
+            return Integer.MIN_VALUE;
+        }
+        // difference between piece counts with kings counted twice
+        return pieceScore(player) - pieceScore(player.getOpposite());
+    }
+
+
+    private int heuristic2(Player player){
+        // 'infinite' value for winning
+        if (this.pieceCount.get(player.getOpposite()) == 0){
+            return Integer.MAX_VALUE;
+        }
+        // 'negative infinite' for losing
+        else if (this.pieceCount.get(player) == 0){
+            return Integer.MIN_VALUE;
         }
         else{
-            return getSuccessors(false);
+            return pieceScore(player)/pieceScore(player.getOpposite());
+        }
+    }
+
+    private int pieceScore(Player player){
+        return this.pieceCount.get(player) + this.kingCount.get(player);
+    }
+
+    public ArrayList<Board> getSuccessors(){
+    	ArrayList<Board> successors = getSuccessors(true);
+        if (Settings.FORCETAKES){
+            if (successors.size() > 0){
+                // return only jump successors if available (forced)
+                return  successors;
+            }
+            else{
+                // return non-jump successors (since no jumps available)
+                return getSuccessors(false);
+            }
+        }
+        else{
+            // return jump and non-jump successors
+            successors.addAll(getSuccessors(false));
+            return successors;
         }
     }
     
@@ -74,12 +128,24 @@ public class Board {
     }
 
     public ArrayList<Board> getSuccessors(int position){
-    	ArrayList<Board> jumps = getSuccessors(true);
-        if (jumps.size() > 0){
-            return getSuccessors(position, true);
+    	if (Settings.FORCETAKES){
+            // compute jump successors GLOBALLY
+            ArrayList<Board> jumps = getSuccessors(true);
+            if (jumps.size() > 0){
+                // return only jump successors if available (forced)
+                return getSuccessors(position, true);
+            }
+            else{
+                // return non-jump successors (since no jumps available)
+                return getSuccessors(position, false);
+            }
         }
         else{
-            return getSuccessors(position, false);
+            // return jump and non-jump successors
+            ArrayList<Board> result = new ArrayList<>();
+            result.addAll(getSuccessors(position, true));
+            result.addAll(getSuccessors(position, false));
+            return result;
         }
     }
 
