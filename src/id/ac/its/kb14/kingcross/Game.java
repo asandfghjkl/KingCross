@@ -4,11 +4,6 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Stack;
 
-import main.game.BoardState;
-import main.game.MoveFeedback;
-import main.game.Player;
-import main.game.Settings;
-
 public class Game{
 
     private Stack<Board> state;
@@ -17,7 +12,7 @@ public class Game{
     private boolean humanWon;
 
     public Game(){
-    	memory = Settings.UNDO_MEMORY;
+    	memory = GUI.UNDO_MEMORY;
         state = new Stack<>();
         state.push(Board.InitialState());
         ai = new AImoves();

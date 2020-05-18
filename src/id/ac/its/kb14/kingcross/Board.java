@@ -4,10 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import main.game.BoardState;
-import main.game.Player;
-import main.game.Settings;
-
 public class Board {
     public static final int SIDE_LENGTH = 8;
     public static final int NO_SQUARES = SIDE_LENGTH*SIDE_LENGTH; 
@@ -55,7 +51,7 @@ public class Board {
         return bs;
     }
     public int computeHeuristic(Player player){
-        switch (Settings.HEURISTIC){
+        switch (GUI.HEURISTIC){
             case 1:
                 return heuristic1(player);
             case 2:
@@ -98,7 +94,7 @@ public class Board {
 
     public ArrayList<Board> getSuccessors(){
     	ArrayList<Board> successors = getSuccessors(true);
-        if (Settings.FORCETAKES){
+        if (GUI.FORCETAKES){
             if (successors.size() > 0){
                 // return only jump successors if available (forced)
                 return  successors;
@@ -128,7 +124,7 @@ public class Board {
     }
 
     public ArrayList<Board> getSuccessors(int position){
-    	if (Settings.FORCETAKES){
+    	if (GUI.FORCETAKES){
             // compute jump successors GLOBALLY
             ArrayList<Board> jumps = getSuccessors(true);
             if (jumps.size() > 0){

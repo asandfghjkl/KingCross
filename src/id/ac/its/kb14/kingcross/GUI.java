@@ -4,10 +4,13 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -17,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.ImageIcon;
@@ -33,18 +37,10 @@ import javax.swing.JSlider;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
-import main.game.AI;
-import main.game.BoardState;
-import main.game.MoveFeedback;
-import main.game.Player;
-import main.game.Settings;
-import main.gui.CheckerButton;
-import main.gui.Colour;
-import main.gui.GhostButton;
-
 public class GUI extends JFrame{
 
     private Game game;
+    private ArrayList<Board> possibleMoves;
     private SquarePanel[] squares;
     private JPanel checkerboardPanel;
     private JPanel contentPane;
@@ -52,6 +48,11 @@ public class GUI extends JFrame{
     private Board hintMove;
     private List<Integer> helpMoves;
     private HashMap<Integer, Integer> difficultyMapping;
+    public static boolean FORCETAKES = true; //
+    public static Player FIRSTMOVE = Player.HUMAN; // who moves first
+    public static int AI_DEPTH = 7;
+    public static final int UNDO_MEMORY = 20;
+    public static int HEURISTIC = 1;
 
     public GUI(){
     	setIcon();
@@ -79,14 +80,14 @@ public class GUI extends JFrame{
         possibleMoves = new ArrayList<>();
         hintMove = null;
         setup();
-        if (main.gui.Settings.hintMode){
+        if (Settings.hintMode){
             onHintClick();
         }
     }
 
     private void settingsPopup(){
         // panel for options
-        JPanel panel = new JPanel(new GridLayout(5,1));
+        JPanel panel = new JPanel(new GridLayout(6,0));
         // difficulty slider
         JLabel text1 = new JLabel("Set Difficulty", 10);
         JSlider slider = new JSlider();
@@ -106,40 +107,42 @@ public class GUI extends JFrame{
         slider.setValue(3);
         // force takes option
         JRadioButton forceTakesButton = new JRadioButton("Force Takes");
-        forceTakesButton.setSelected(Settings.FORCETAKES);
+        forceTakesButton.setSelected(FORCETAKES);
         // who gets first move?
         ButtonGroup buttonGroup = new ButtonGroup();
         JRadioButton humanFirstRadioButton = new JRadioButton("You Play First");
         JRadioButton aiRadioButton = new JRadioButton("Computer Plays First");
         buttonGroup.add(humanFirstRadioButton);
         buttonGroup.add(aiRadioButton);
-        aiRadioButton.setSelected(Settings.FIRSTMOVE== Player.AI);
-        humanFirstRadioButton.setSelected(Settings.FIRSTMOVE== Player.HUMAN);
+        aiRadioButton.setSelected(FIRSTMOVE== Player.AI);
+        humanFirstRadioButton.setSelected(FIRSTMOVE== Player.HUMAN);
         // add components to panel
+        panel.add(new JLabel(new ImageIcon("images/name.png")));
         panel.add(text1);
         panel.add(slider);
         panel.add(forceTakesButton);
         panel.add(humanFirstRadioButton);
         panel.add(aiRadioButton);
         // pop up
-        int result = JOptionPane.showConfirmDialog(null, panel, "Game Settings",
-                     JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+        int result = JOptionPane.showConfirmDialog(null, panel, "Start Panel",
+                     JOptionPane.OK_CANCEL_OPTION);
         // process results
         if(result == JOptionPane.OK_OPTION){
-            Settings.AI_DEPTH =  difficultyMapping.get(slider.getValue());
-            System.out.println("AI depth = " + Settings.AI_DEPTH);
-            Settings.FIRSTMOVE = humanFirstRadioButton.isSelected() ? Player.HUMAN : Player.AI;
-            Settings.FORCETAKES = forceTakesButton.isSelected();
+            AI_DEPTH =  difficultyMapping.get(slider.getValue());
+            System.out.println("AI depth = " + AI_DEPTH);
+            FIRSTMOVE = humanFirstRadioButton.isSelected() ? Player.HUMAN : Player.AI;
+            FORCETAKES = forceTakesButton.isSelected();
         }
+        else if(result == JOptionPane.CANCEL_OPTION) System.exit(0);
     }
     
     public void setup() {
-    	switch (Settings.FIRSTMOVE){
+    	switch (FIRSTMOVE){
         case AI:
-            main.gui.Settings.AIcolour = Colour.WHITE;
+            Settings.AIcolour = Colour.WHITE;
             break;
         case HUMAN:
-            main.gui.Settings.AIcolour = Colour.BLACK;
+            Settings.AIcolour = Colour.BLACK;
             break;
     	}
     	setupMenuBar();
@@ -161,7 +164,8 @@ public class GUI extends JFrame{
         updateText("");
         this.pack();
         this.setVisible(true);
-        if (Settings.FIRSTMOVE == Player.AI){
+        this.setLocationRelativeTo(null);
+        if (FIRSTMOVE == Player.AI){
             aiMove();
         }
     }
@@ -176,7 +180,7 @@ public class GUI extends JFrame{
         addSquares();
         addGhostButtons();
         checkerboardPanel.setVisible(true);
-        checkerboardPanel.repaint();
+        checkerboardPanel.repaint();  
         this.pack();
         this.setVisible(true);
     }
@@ -229,7 +233,7 @@ public class GUI extends JFrame{
     }
     
     private void addGhostButtons(){
-        for (BoardState state : possibleMoves){
+        for (Board state : possibleMoves){
             int newPos = state.getToPos();
             GhostButton button = new GhostButton(state);
             button.addActionListener(new ActionListener() {
@@ -264,8 +268,8 @@ public class GUI extends JFrame{
         JMenu viewMenu = new JMenu("View");
         JRadioButtonMenuItem viewItemHelpMode = new JRadioButtonMenuItem("Help mode");
         JRadioButtonMenuItem viewItemHintMode = new JRadioButtonMenuItem("Hint mode");
-        viewItemHelpMode.setSelected(main.gui.Settings.helpMode);
-        viewItemHintMode.setSelected(main.gui.Settings.hintMode);
+        viewItemHelpMode.setSelected(Settings.helpMode);
+        viewItemHintMode.setSelected(Settings.hintMode);
         JMenu helpMenu = new JMenu("Help");
         JMenuItem rulesItem = new JMenuItem("Game Rules");
         JMenuItem helpItemHint = new JMenuItem("Hint!");
@@ -353,7 +357,7 @@ public class GUI extends JFrame{
 
     private void onHintClick(){
         if (!game.isGameOver()){
-            AI ai = new AI(10, Player.HUMAN);
+            AImoves ai = new AImoves(10, Player.HUMAN);
             helpMoves = null;
             hintMove = ai.move(this.game.getState(), Player.HUMAN);
             updateCheckerBoard();
@@ -367,19 +371,19 @@ public class GUI extends JFrame{
     }
 
     private void onHelpModeClick(){
-        main.gui.Settings.helpMode = !main.gui.Settings.helpMode;
-        System.out.println("help mode: " + main.gui.Settings.helpMode);
+        Settings.helpMode = !Settings.helpMode;
+        System.out.println("help mode: " + Settings.helpMode);
     }
 
     private void onHintModeClick(){
-        main.gui.Settings.hintMode = !main.gui.Settings.hintMode;
-        System.out.println("hint mode: " + main.gui.Settings.hintMode);
+        Settings.hintMode = !Settings.hintMode;
+        System.out.println("hint mode: " + Settings.hintMode);
         onHintClick();
     }
     
     private void onPieceClick(ActionEvent actionEvent){
     	if(game.getTurn() == Player.HUMAN ){
-            CheckerButton button = (CheckerButton) actionEvent.getSource();
+            Button button = (Button) actionEvent.getSource();
             int pos = button.getPosition();
             if(button.getPiece().getPlayer() == Player.HUMAN){
                 possibleMoves = game.getValidMoves(pos);
@@ -518,7 +522,7 @@ public class GUI extends JFrame{
     private void onUndoClick(){
         game.undo();
         updateCheckerBoard();
-        if (main.gui.Settings.hintMode){
+        if (Settings.hintMode){
             onHintClick();
         }
     }

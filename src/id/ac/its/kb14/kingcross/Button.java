@@ -15,6 +15,7 @@ import javax.swing.JButton;
 public class Button extends JButton{
 	private int position;
     private Piece piece;
+    private Game game;
     int X;
     int Y;
     int screenX = 0;

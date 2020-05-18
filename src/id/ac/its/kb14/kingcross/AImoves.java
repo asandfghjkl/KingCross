@@ -3,24 +3,20 @@ package id.ac.its.kb14.kingcross;
 import java.util.ArrayList;
 import java.util.Random;
 
-import main.game.BoardState;
-import main.game.Player;
-import main.game.Settings;
-
 public class AImoves {
     private int depth;
     private Player player;
     
     public AImoves(){
-    	depth = Settings.AI_DEPTH;
+    	depth = GUI.AI_DEPTH;
         player = Player.AI;
     }
 
-    public AImoves(Player player){
+    public AImoves(int depth, Player player){
     	 this.depth = depth;
          this.player = player;
     }
-    public Board move(BoardState state, Player player){
+    public Board move(Board state, Player player){
         if (state.getTurn() == player){
             ArrayList<Board> successors = state.getSuccessors();
             return minimaxMove(successors);
@@ -30,11 +26,6 @@ public class AImoves {
         }
     }
 
-    /**
-     * Chooses best successor state based on the minimax algorithm.
-     * @param successors
-     * @return
-     */
     private Board minimaxMove(ArrayList<Board> successors){
         if (successors.size() == 1){
             return successors.get(0);
@@ -58,12 +49,7 @@ public class AImoves {
         return randomMove(equalBests);
     }
 
-    /**
-     * Chooses a successor state randomly.
-     * @param successors
-     * @return
-     */
-    private Board randomMove(ArrayList<BoardState> successors){
+    private Board randomMove(ArrayList<Board> successors){
         if (successors.size() < 1){
             throw new RuntimeException("Can't randomly choose from empty list.");
         }
@@ -73,12 +59,6 @@ public class AImoves {
     }
 
 
-    /**
-     * Implements the minimax algorithm with alpha-beta pruning
-     * @param node
-     * @param depth
-     * @return minimax score associated with node
-     */
     private int minimax(Board node, int depth){
         // initialize alpha (computed as a max)
         int alpha = Integer.MIN_VALUE;
@@ -88,14 +68,6 @@ public class AImoves {
         return minimax(node, depth, alpha, beta);
     }
 
-    /**
-     * Implements the minimax algorithm with alpha-beta pruning
-     * @param node
-     * @param depth
-     * @param alpha
-     * @param beta
-     * @return
-     */
     private int minimax(Board node, int depth, int alpha, int beta){
         if (depth == 0 || node.isGameOver()){
             return node.computeHeuristic(this.player);
@@ -118,7 +90,7 @@ public class AImoves {
         if (node.getTurn() == player.getOpposite()){
             // opponent tries to minimize this value
             int v = Integer.MAX_VALUE;
-            for (BoardState child : node.getSuccessors()){
+            for (Board child : node.getSuccessors()){
                 v = Math.min(v,minimax(child, depth-1, alpha, beta));
                 beta = Math.min(beta, v);
                 // prune
