@@ -22,6 +22,8 @@ public class Game{
     public void playerMove(Board newState){
         if (!isGameOver() && state.peek().getTurn() == Player.HUMAN){
             updateState(newState);
+            GUI.scoreAI = 12 - state.peek().pieceCount.get(Player.HUMAN);
+        	GUI.score = 12 - state.peek().pieceCount.get(Player.AI);
         }
     }
     
@@ -87,6 +89,8 @@ public class Game{
         if (!isGameOver() && state.peek().getTurn() == Player.AI){
             Board newState = ai.move(this.state.peek(), Player.AI);
             updateState(newState);
+            GUI.scoreAI = 12 - state.peek().pieceCount.get(Player.HUMAN);
+        	GUI.score = 12 - state.peek().pieceCount.get(Player.AI);
         }
     }
 

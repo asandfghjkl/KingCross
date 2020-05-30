@@ -91,7 +91,7 @@ public class AImoves {
             // opponent tries to minimize this value
             int v = Integer.MAX_VALUE;
             for (Board child : node.getSuccessors()){
-                v = Math.min(v,minimax(child, depth-1, alpha, beta));
+                v = Math.min(v, minimax(child, depth-1, alpha, beta));
                 beta = Math.min(beta, v);
                 // prune
                 if (alpha >= beta){

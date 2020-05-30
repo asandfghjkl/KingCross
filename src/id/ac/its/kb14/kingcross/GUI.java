@@ -53,6 +53,8 @@ public class GUI extends JFrame{
     public static int AI_DEPTH = 7;
     public static final int UNDO_MEMORY = 20;
     public static int HEURISTIC = 1;
+    public static int score = 0;
+    public static int scoreAI = 0;
 
     public GUI(){
     	setIcon();
@@ -171,7 +173,7 @@ public class GUI extends JFrame{
     }
 
     private void updateText(String text){
-        textBox.setText(text);
+		textBox.setText("score: " + score + "                                    opponent score:" + scoreAI);
     }
     
     private void updateCheckerBoard(){
@@ -396,7 +398,7 @@ public class GUI extends JFrame{
                         onHelpMovablesClick();
                     }
                 }
-                else{
+                else {
                     updateText("");
                 }
             }
